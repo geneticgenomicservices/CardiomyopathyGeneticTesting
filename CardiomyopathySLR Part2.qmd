@@ -1,0 +1,1689 @@
+---
+title: "Cardiomyopathy Genetic Testing SLR December 2, 2022 Part 2"
+author: "John Belmont"
+format: html
+editor: visual
+---
+
+# Cardiomyopathy Genetic Testing Systematic Literature Review and Meta-Analysis
+
+This is a document containing basic descriptive analysis of publications reporting diagnostic yield (proportion) for genetic testing in patients with various forms of cardiomyopathy.
+
+The publications are restricted to those published between 2011 and 2022. Part 2 contains exploratory summaries and visualizations some of which may be included in the main text of the SLR or supplementary material.
+
+```{r}
+#| echo: false
+#| include: false
+setwd("C:/Users/jwbht/OneDrive - Genetics & Genomics Services, Inc/Documents/GAAP-CVD/Publications/Cardiomyopathy SLR/CardiomyopathySLR")
+
+library(tidyverse)
+library(knitr)
+library(readxl)
+library(reshape2)
+library(tinytex)
+library(patchwork)
+library(meta)
+library(quarto)
+library(grid)
+library(forestploter)
+library(kableExtra)
+library(ggpubr)
+library(rstatix)
+
+slr_palette <- c("#000080","#fe6100")
+wildflower_palette <- c("#6f7e4fff", "#69713dff", "#787e45ff", "#97944eff", "#a8a060ff", "#957a46ff", "#768f4aff", "#5c6a3bff", "#6a724eff", "#515a35ff", "#c9aa57ff", "#d8c55dff", "#739065ff", "#454a49ff", "#676569ff", "#717975ff", "#a96d56ff", "#9e9fa0ff", "#494c74ff", "#91849bff", "#587645ff", "#bac0b0ff", "#707a96ff", "#7d87c7ff", "#454b96ff", "#5e6aa4ff", "#db9489ff", "#c6724dff", "#d87152ff", "#cf6455ff", "#e87157ff", "#ed705dff")
+```
+
+```{r}
+#| echo: false
+#| include: false
+#read in the recoded raw data file
+slr_data <- read_excel("Cardiomyopathy SLR Extracted Data 20221122 v16.xlsx", sheet = "ALL")
+slr_data$Proband_count <- as.numeric(slr_data$Proband_count)
+slr_data$Family_history_count <- as.numeric(slr_data$Family_history_count)
+slr_data$Test_max_genes_count <- as.numeric(slr_data$Test_max_genes_count)
+slr_data$Variant_VUS <- as.numeric(slr_data$Variant_VUS)
+slr_data$Overall_total <- as.numeric(slr_data$Overall_total)
+slr_data$Year <- as.numeric(slr_data$Year)
+```
+
+## Descriptive Analyses
+
+Year of publication
+
+```{r echo=FALSE, fig.width = 10}
+#| echo: false
+
+#year of publication
+
+p1 <- ggplot(data = slr_data %>% filter(Disease_HCM == 1, User == "jwb"), aes(x = Year)) + 
+  geom_bar(fill = wildflower_palette[31]) + theme_minimal() + labs(title = "HCM") + coord_flip() + 
+  scale_y_continuous(limits = c(0,12), breaks = seq(0,12,2))
+p2 <- ggplot(data = slr_data %>% filter(Disease_DCM == 1, User == "jwb"), aes(x = Year)) + 
+  geom_bar(fill = wildflower_palette[26]) + theme_minimal() + labs(title = "DCM") + coord_flip() + 
+  scale_y_continuous(limits = c(0,12), breaks = seq(0,12,2))
+p3 <- ggplot(data = slr_data %>% filter(Disease_RCM == 1, User == "jwb"), aes(x = Year)) + 
+  geom_bar(fill = wildflower_palette[11]) + theme_minimal() + labs(title = "RCM") + coord_flip() + 
+  scale_y_continuous(limits = c(0,12), breaks = seq(0,12,2))
+p4 <- ggplot(data = slr_data %>% filter(Disease_ACM == 1, User == "jwb"), aes(x = Year)) + 
+  geom_bar(fill = wildflower_palette[15]) + theme_minimal() + labs(title = "ACM") + coord_flip() + 
+  scale_y_continuous(limits = c(0,12), breaks = seq(0,12,2))
+p5 <- ggplot(data = slr_data %>% filter(Disease_LVNC == 1, User == "jwb"), aes(x = Year)) + 
+  geom_bar(fill = wildflower_palette[21]) + theme_minimal() + labs(title = "LVNC") + coord_flip() + 
+  scale_y_continuous(limits = c(0,12), breaks = seq(0,12,2))
+
+
+(p1 + p2) / (p3 + p4)/ (p5 + plot_spacer())
+
+p6 <- ggplot(data = slr_data %>% filter(User == "jwb"), aes(x = as.numeric(Year), y = as.numeric(Proband_count))) + 
+  geom_jitter(colour = "#fe6100", size = 2, width = .1, height = 0) + scale_x_continuous(breaks = seq(2011,2022,1)) +
+  theme_minimal()  + xlab("Year") + ylab("Probands")
+p6
+```
+
+Study Design
+
+```{r}
+#| echo: false
+#Study Design
+slr_data %>% group_by(User) %>% drop_na(Design_retrospective) %>% count(Design_retrospective)
+ 
+slr_data %>% filter(User == "jwb") %>% count(Design, sort = TRUE) %>%           kbl() %>% kable_styling()
+
+```
+
+Test Platforms
+
+```{r}
+#| echo: false
+#Test Platforms
+p7 <- ggplot(data = slr_data %>% filter(Test_gene_panel == 1, User == "jwb"), 
+             aes(x = as.numeric(Year), y = Proband_count)) + 
+  geom_jitter(colour = wildflower_palette[31], width = .1, height = 0, size = 2) + ylim(0,3500) +
+  theme_minimal() + labs(title = "Gene Panel") + xlab("Year") +  
+  scale_x_continuous(breaks = seq(2011,2022,1), limits = c(2011,2022)) 
+p8 <- ggplot(data = slr_data %>% filter(Test_exome == 1, User == "jwb"), 
+             aes(x = as.numeric(Year), y = Proband_count)) + 
+  geom_jitter(colour = wildflower_palette[26], width = .1, height = 0, size = 2) + ylim(0,3500)  +
+  theme_minimal() + labs(title = "Exome") +  xlab("Year") +
+  scale_x_continuous(breaks = seq(2011,2022,1), limits = c(2011,2022)) 
+p9 <- ggplot(data = slr_data %>% filter(Test_genome == 1, User == "jwb"), 
+             aes(x = as.numeric(Year), y = Proband_count)) + 
+  geom_jitter(colour = wildflower_palette[21], width = .1, height = 0, size = 2) + ylim(0,3500) +
+  theme_minimal() + labs(title = "Genome") +  xlab("Year") +
+  scale_x_continuous(breaks = seq(2011,2022,1), limits = c(2011,2022))
+
+p7 / p8 / p9
+
+```
+
+Association of year of publication with diagnostic yield
+
+```{r}
+#association of year of publication with diagnostic yield
+
+p10 <- ggplot(data = slr_data %>% filter(User == "jwb"), aes(x = Year, y = Overall_DY)) + geom_jitter(color = "#000080", width = .1) + ggtitle("jwb") + scale_x_continuous(breaks=seq(2011,2022,1)) + theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1)) + ggtitle(NULL)
+
+p11 <- ggplot(data = slr_data %>% filter(User == "rla"), aes(x = Year, y = Overall_DY)) + geom_point(color = "#fe6100") + ggtitle("rla") + theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))
+
+p10 + plot_annotation(title = "Diagnostic Yield by Year of Publication")
+
+```
+
+Effect of the number of genes in the genetic test panels (Test_max_genes_count)
+
+```{r}
+#| echo: false
+#Effect of the number of genes in the genetic test panels (Test_max_genes_count)
+p12 <- ggplot(data = slr_data %>% filter(User == "jwb") %>% drop_na(Test_max_genes_count), aes(x = as.numeric(Test_max_genes_count), y = Overall_DY)) + geom_point(color = "#000080") + ggtitle("jwb") + theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1)) + scale_x_continuous(name = "Number of Genes", breaks = seq(0,240,20), limits = c(0,250)) + ggtitle(NULL)
+
+p13 <- ggplot(data = slr_data %>% filter(User == "rla") %>% drop_na(Test_max_genes_count), aes(x = as.numeric(Test_max_genes_count), y = Overall_DY)) + geom_point(color = "#fe6100") + ggtitle("rla") + theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1)) + scale_x_continuous(name = "Number of Genes", breaks = seq(0,240,20), limits = c(0,250))
+
+p12  + plot_annotation(title = "Diagnostic Yield by Max Genes in Panel")
+```
+
+```{r}
+#| echo: false
+#effect of use of ACMG/AMP criteria
+#Variant_interpretation_ACMG
+p14 <- ggplot(data = slr_data %>% filter(User == "jwb") %>% drop_na(Variant_interpretation_ACMG), aes(x = as.factor(Variant_interpretation_ACMG), y = Overall_DY))  + geom_boxplot(width = .25) + geom_jitter(color = "#000080", width = .05) + scale_x_discrete(labels = c("0"= "No","1"="Yes")) + xlab("ACMG/AMP") + theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1)) 
+
+p15 <- ggplot(data = slr_data %>% filter(User == "rla") %>% drop_na(Variant_interpretation_ACMG), aes(x = as.factor(Variant_interpretation_ACMG), y = Overall_DY)) + geom_boxplot(width = .25) + geom_jitter(color = "#fe6100", width = .05)  + ggtitle("rla") + theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1)) 
+
+p14  + plot_annotation(title = "Use of ACMG/AMP Criteria")
+```
+
+Indication
+
+```{r}
+#| echo: false
+
+#effect of indication - symptomatic
+#Indication_classification_symptomatic
+p16 <- ggplot(data = slr_data %>% filter(User == "jwb") %>% drop_na(Indication_classification_symptomatic), aes(x = as.factor(Indication_classification_symptomatic), y = Overall_DY))  + geom_boxplot(width = .25) + geom_jitter(color = "#000080", width = .05) + scale_x_discrete(labels = c("0"= "No","1"="Yes")) + xlab("Symptomatic Probands") + theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1)) 
+
+p17 <- ggplot(data = slr_data %>% filter(User == "rla") %>% drop_na(Indication_classification_symptomatic), aes(x = as.factor(Indication_classification_symptomatic), y = Overall_DY)) + geom_boxplot(width = .25) + geom_jitter(color = "#fe6100", width = .05)  + ggtitle("rla") + theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1)) 
+
+p16 + plot_annotation(title = "Testing Indication - Symptomatic")
+
+```
+
+Pediatric Age Inclusion
+
+```{r}
+#| echo: false
+ 
+slr_data %>% filter(User == "jwb") %>% count(Age_groups, sort = TRUE) %>%           kbl() %>% kable_styling()
+
+#effect of Pediatric age inclusion
+#Age_pediatric
+p18 <- ggplot(data = slr_data %>% filter(User == "jwb") %>% drop_na(Age_pediatric), aes(x = as.factor(Age_pediatric), y = Overall_DY))  + geom_boxplot(width = .25) + geom_jitter(color = "#000080", width = .05) + scale_x_discrete(labels = c("0"= "No","1"="Yes")) + xlab("Inclusion of Age 0-21") + theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1)) 
+
+p19 <- ggplot(data = slr_data %>% filter(User == "rla") %>% drop_na(Age_pediatric), aes(x = as.factor(Age_pediatric), y = Overall_DY)) + geom_boxplot(width = .25) + geom_jitter(color = "#fe6100", width = .05)  + ggtitle("rla") + xlab("Inclusion of Age 0-21") + theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1)) 
+
+p18 + plot_annotation(title = "Inclusion of Children")
+
+
+```
+
+### Publication Years for Clinical Types of Cardiomyopathy
+
+Association of hypertrophic cardiomyopathy with publication year
+
+```{r}
+#| echo: false
+
+#association of hypertrophic cardiomyopathy with publication year
+#HCM_positive
+#HCM_total
+
+g1 <- ggplot(data = slr_data %>% filter(User == "jwb") %>% drop_na(HCM_positive), aes(x = Year, y = HCM_positive/HCM_total)) + geom_point(color = "#000080") + scale_x_continuous(breaks=seq(2011,2022,1)) + ylim(0,1) + theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1)) + xlab("Publication Year") + ylab("HCM Diagnostic Rate")
+
+g2 <- ggplot(data = slr_data %>% filter(User == "rla") %>% drop_na(HCM_positive), aes(x = Year, y = HCM_positive/HCM_total)) + geom_point(color = "#fe6100") + ggtitle("rla") + ylim(0,1) + theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1)) + scale_x_discrete(name = "Publication Year")
+
+g1 + plot_annotation(title = "HCM Diagnostic Yield by Publication Year")
+
+
+
+```
+
+Association of dilated cardiomyopathy with publication year
+
+```{r}
+#| echo: false
+
+#association of dilated cardiomyopathy with publication year
+#DCM_positive
+#DCM_total
+
+g3 <- ggplot(data = slr_data %>% filter(User == "jwb") %>% drop_na(DCM_positive), aes(x = Year, y = DCM_positive/DCM_total)) + geom_point(color = "#000080")  + scale_x_continuous(breaks=seq(2011,2022,1)) + ylim(0,1) + theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1)) + xlab("Publication Year") + ylab("DCM Diagnostic Rate")
+
+g4 <- ggplot(data = slr_data %>% filter(User == "rla") %>% drop_na(DCM_positive), aes(x = Year, y = DCM_positive/DCM_total)) + geom_point(color = "#fe6100") + ggtitle("rla") + ylim(0,1) + theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1)) + scale_x_discrete(name = "Publication Year")
+
+g3 + plot_annotation(title = "DCM Diagnostic Yield by Publication Year")
+```
+
+Association of restrictive cardiomyopathy with publication year
+
+```{r}
+#| echo: false
+
+#association of restrictive cardiomyopathy with publication year
+#RCM_positive
+#RCM_total
+
+g5 <- ggplot(data = slr_data %>% filter(User == "jwb") %>% drop_na(RCM_positive), aes(x = Year, y = RCM_positive/RCM_total)) + geom_point(color = "#000080")  + scale_x_continuous(breaks=seq(2011,2022,1)) + ylim(0,1) + theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1)) + xlab("Publication Year") + ylab("RCM Diagnostic Rate")
+
+g6 <- ggplot(data = slr_data %>% filter(User == "rla") %>% drop_na(RCM_positive), aes(x = Year, y = RCM_positive/RCM_total)) + geom_point(color = "#fe6100") + ggtitle("rla") + ylim(0,1) + theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1)) + scale_x_discrete(name = "Publication Year")
+
+g5 + plot_annotation(title = "RCM Diagnostic Yield by Publication Year")
+
+```
+
+Association of arrhythmogenic cardiomyopathy with publication year
+
+```{r}
+#| echo: false
+
+#association of arrhythmogenic cardiomyopathy with publication year
+#ACM_positive
+#ACM_total
+
+g7 <- ggplot(data = slr_data %>% filter(User == "jwb") %>% drop_na(ACM_positive), aes(x = Year, y = ACM_positive/ACM_total)) + geom_point(color = "#000080")  + scale_x_continuous(breaks=seq(2011,2022,1)) + ylim(0,1) + theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1)) + xlab("Publication Year") + ylab("ACM Diagnostic Rate")
+
+g8 <- ggplot(data = slr_data %>% filter(User == "rla") %>% drop_na(ACM_positive), aes(x = Year, y = ACM_positive/ACM_total)) + geom_point(color = "#fe6100") + ggtitle("rla") + ylim(0,1) + theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1)) + scale_x_discrete(name = "Publication Year")
+
+g7  + plot_annotation(title = "ACM Diagnostic Yield by Publication Year")
+
+```
+
+Association of arrhythmogenic cardiomyopathy with publication year
+
+```{r}
+#| echo: false
+
+#association of arrhythmogenic cardiomyopathy with publication year
+#LVNC_positive
+#LVNC_total
+
+g9 <- ggplot(data = slr_data %>% filter(User == "jwb") %>% drop_na(LVNC_positive), aes(x = Year, y = LVNC_positive/LVNC_total)) + geom_point(color = "#000080")  + scale_x_continuous(breaks=seq(2011,2022,1)) + ylim(0,1) + theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1)) + xlab("Publication Year") + ylab("LVNC Diagnostic Rate")
+
+g10 <- ggplot(data = slr_data %>% filter(User == "rla") %>% drop_na(LVNC_positive), aes(x = Year, y = LVNC_positive/LVNC_total)) + geom_point(color = "#fe6100") + ggtitle("rla") + ylim(0,1) + theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1)) + scale_x_discrete(name = "Publication Year")
+
+g9 + plot_annotation(title = "LVNC Diagnostic Yield by Publication Year")
+
+```
+
+## Diagnostic Yields by Type of Cardiomyopathy - all studies
+
+Diagnostic yield or rate is the simple proportion of cases with positive genetic test results (not including VUS) among the total set of probands who received testing. Some publications report total probands but with only a subset receiving testing. This includes studies with single genes tested and CNV only. Those studies typically have low diagnostic yields.
+
+HCM diagnostic yield
+
+```{r echo=F}
+#| echo: false
+
+##Diagnostic Yields by Type of Cardiomyopathy
+
+#HCM diagnostic yield
+ggplot(data = slr_data %>% drop_na(HCM_positive) %>% filter(User == "jwb"), 
+       aes(x = Year, y = as.numeric(HCM_positive/HCM_total), size = HCM_total)) + ylim(0,1) + 
+       geom_jitter(colour = wildflower_palette[31]) + 
+       ylab("Diagnostic Yield") + labs(title ="HCM Diagnostic Yield")
+
+ggplot(data = slr_data %>% drop_na(HCM_positive, Family_history_count) %>% filter(User == "jwb"), 
+       aes(x = as.numeric(Family_history_count/Proband_count), y = as.numeric(HCM_positive/HCM_total), 
+       size = HCM_total)) + ylim(0,1) + 
+       geom_jitter(colour = wildflower_palette[31]) + 
+       xlab("Proportion Family History Positive") + ylab("Diagnostic Yield") + labs(title ="HCM DY by Family History")
+
+slr_data %>% group_by(User) %>% drop_na(HCM_total) %>% 
+  summarise(HCM_Studies = length(HCM_positive),
+            Proband_HCM = sum(HCM_total), 
+            mean_DY = round(mean((HCM_positive/HCM_total)),2),
+            #wtmean_DY = round(weighted.mean((HCM_positive/HCM_total), HCM_total),4), 
+            median = round(median(HCM_positive/HCM_total),2),
+            min = round(min(HCM_positive/HCM_total),2),
+            max = round(max(HCM_positive/HCM_total),2),
+            Clinical_Utility = sum(CU_exdiagnostic, na.rm = T),
+            Cases_VUS = round(weighted.mean((Variant_VUS/Overall_total), Overall_total, na.rm = T),2)) %>% 
+  kable()
+
+```
+
+DCM diagnostic yield
+
+```{r}
+#| echo: false
+
+#DCM diagnostic yield
+ggplot(data = slr_data %>% drop_na(DCM_positive) %>% filter(User == "jwb"), 
+       aes(x = Year, y = as.numeric(DCM_positive/DCM_total), size = DCM_total)) + ylim(0,1) + 
+       geom_jitter(colour = wildflower_palette[26]) + 
+       ylab("Diagnostic Yield") + labs(title ="DCM Diagnostic Yield")
+
+ggplot(data = slr_data %>% drop_na(DCM_positive, Family_history_count) %>% filter(User == "jwb"), 
+       aes(x = as.numeric(Family_history_count/Proband_count), y = as.numeric(DCM_positive/DCM_total), 
+       size = DCM_total)) + ylim(0,1) + 
+       geom_jitter(colour = wildflower_palette[26]) + 
+       xlab("Proportion Family History Positive") + ylab("Diagnostic Yield") + labs(title ="DCM DY by Family History")
+
+slr_data %>% group_by(User) %>% drop_na(DCM_total) %>% 
+  summarise(DCM_Studies = length(DCM_positive),
+            Proband_DCM = sum(DCM_total), 
+            mean_DY = round(mean((DCM_positive/DCM_total)),2),
+            #wtmean_DY = round(weighted.mean((DCM_positive/DCM_total), DCM_total),4), 
+            median = round(median(DCM_positive/DCM_total),2),
+            min = round(min(DCM_positive/DCM_total),2),
+            max = round(max(DCM_positive/DCM_total),2),
+            Clinical_Utility = sum(CU_exdiagnostic, na.rm = T),
+            Cases_VUS = round(weighted.mean((Variant_VUS/Overall_total), Overall_total, na.rm = T),2)) %>% 
+  kable()
+```
+
+RCM diagnostic yield
+
+```{r}
+#| echo: false
+
+#RCM diagnostic yield
+ggplot(data = slr_data %>% drop_na(RCM_positive) %>% filter(User == "jwb"), 
+       aes(x = Year, y = as.numeric(RCM_positive/RCM_total), size = RCM_total)) + ylim(0,1) + 
+       geom_jitter(colour = wildflower_palette[21]) + 
+       ylab("Diagnostic Yield") + labs(title ="RCM Diagnostic Yield")
+
+ggplot(data = slr_data %>% drop_na(RCM_positive, Family_history_count) %>% filter(User == "jwb"), 
+       aes(x = as.numeric(Family_history_count/Proband_count), y = as.numeric(RCM_positive/RCM_total), 
+       size = RCM_total)) + ylim(0,1) + 
+       geom_jitter(colour = wildflower_palette[21]) + 
+       xlab("Proportion Family History Positive") + ylab("Diagnostic Yield") + labs(title ="RCM DY by Family History")
+
+slr_data %>% group_by(User) %>% drop_na(RCM_total) %>% 
+  summarise(RCM_Studies = length(RCM_positive),
+            Proband_RCM = sum(RCM_total), 
+            mean_DY = round(mean((RCM_positive/RCM_total)),2),
+            #wtmean_DY = round(weighted.mean((RCM_positive/RCM_total), RCM_total),4), 
+            median = round(median(RCM_positive/RCM_total),2),
+            min = round(min(RCM_positive/RCM_total),2),
+            max = round(max(RCM_positive/RCM_total),2),
+            Clinical_Utility = sum(CU_exdiagnostic, na.rm = T),
+            Cases_VUS = round(weighted.mean((Variant_VUS/Overall_total), Overall_total, na.rm = T),2)) %>% 
+  kable()
+```
+
+ACM diagnostic yield
+
+```{r}
+#| echo: false
+
+#ACM diagnostic yield
+ggplot(data = slr_data %>% drop_na(ACM_positive) %>% filter(User == "jwb"), 
+       aes(x = Year, y = as.numeric(ACM_positive/ACM_total), size = ACM_total)) + ylim(0,1) + 
+       geom_jitter(colour = wildflower_palette[15]) + 
+       ylab("Diagnostic Yield") + labs(title ="ACM Diagnostic Yield")
+
+ggplot(data = slr_data %>% drop_na(ACM_positive, Family_history_count) %>% filter(User == "jwb"), 
+       aes(x = as.numeric(Family_history_count/Proband_count), y = as.numeric(ACM_positive/ACM_total), 
+       size = ACM_total)) + ylim(0,1) + 
+       geom_jitter(colour = wildflower_palette[15], size = 3) + 
+       xlab("Proportion Family History Positive") + ylab("Diagnostic Yield") + labs(title ="ACM DY by Family History")
+
+slr_data %>% group_by(User) %>% drop_na(ACM_total) %>% 
+  summarise(ACM_Studies = length(ACM_positive),
+            Proband_ACM = sum(ACM_total), 
+            mean_DY = round(mean((ACM_positive/ACM_total)),2),
+            #wtmean_DY = round(weighted.mean((ACM_positive/ACM_total), ACM_total),4), 
+            median = round(median(ACM_positive/ACM_total),2),
+            min = round(min(ACM_positive/ACM_total),2),
+            max = round(max(ACM_positive/ACM_total),2),
+            Clinical_Utility = sum(CU_exdiagnostic, na.rm = T),
+            Cases_VUS = round(weighted.mean((Variant_VUS/Overall_total), Overall_total, na.rm = T),2)) %>% 
+  kable()
+```
+
+LVNC diagnostic yield
+
+```{r}
+#| echo: false
+
+#LVNC diagnostic yield
+ggplot(data = slr_data %>% drop_na(LVNC_positive) %>% filter(User == "jwb"), 
+       aes(x = Year, y = as.numeric(LVNC_positive/LVNC_total), size = LVNC_total)) + ylim(0,1) + 
+       geom_jitter(colour = wildflower_palette[11]) + 
+       ylab("Diagnostic Yield") + labs(title ="LVNC Diagnostic Yield")
+
+ggplot(data = slr_data %>% drop_na(LVNC_positive, Family_history_count) %>% filter(User == "jwb"), 
+       aes(x = as.numeric(Family_history_count/Proband_count), y = as.numeric(LVNC_positive/LVNC_total), 
+       size = LVNC_total)) + ylim(0,1) + 
+       geom_jitter(colour = wildflower_palette[11]) + 
+       xlab("Proportion Family History Positive") + ylab("Diagnostic Yield") + labs(title ="LVNC DY by Family History")
+
+slr_data %>% group_by(User) %>% drop_na(LVNC_total) %>% 
+  summarise(LVNC_Studies = length(LVNC_positive),
+            Proband_LVNC = sum(LVNC_total), 
+            mean_DY = round(mean((LVNC_positive/LVNC_total)),2),
+            #wtmean_DY = round(weighted.mean((LVNC_positive/LVNC_total), LVNC_total),4), 
+            median = round(median(LVNC_positive/LVNC_total),2),
+            min = round(min(LVNC_positive/LVNC_total),2),
+            max = round(max(LVNC_positive/LVNC_total),2),
+            Clinical_Utility = sum(CU_exdiagnostic, na.rm = T),
+            Cases_VUS = round(weighted.mean((Variant_VUS/Overall_total), Overall_total, na.rm = T),2)) %>% 
+  kable()
+
+```
+
+Unclassified Cardiomyopathy diagnostic yield
+
+```{r}
+#| echo: false
+
+#Other CM diagnostic yield
+ggplot(data = slr_data %>% drop_na(OtherCM_positive) %>% filter(User == "jwb"), 
+       aes(x = Year, y = as.numeric(OtherCM_positive/OtherCM_total), size = OtherCM_total)) + ylim(0,1) + 
+       geom_jitter(colour = wildflower_palette[6]) + 
+       ylab("Diagnostic Yield") + labs(title ="Unclassified Cardiomyopathy Diagnostic Yield")
+
+ggplot(data = slr_data %>% drop_na(OtherCM_positive, Family_history_count) %>% filter(User == "jwb"), 
+       aes(x = as.numeric(Family_history_count/Proband_count), y = as.numeric(OtherCM_positive/OtherCM_total), 
+       size = OtherCM_total)) + ylim(0,1) + geom_jitter(colour = wildflower_palette[6]) + 
+       xlab("Proportion Family History Positive") + ylab("Diagnostic Yield") + 
+       labs(title ="Unclassified DY by Family History")
+
+slr_data %>% group_by(User) %>% drop_na(OtherCM_total) %>% 
+  summarise(OtherCM_Studies = length(OtherCM_positive),
+            Proband_OtherCM = sum(OtherCM_total), 
+            mean_DY = round(mean((OtherCM_positive/OtherCM_total)),2),
+            #wtmean_DY = round(weighted.mean((OtherCM_positive/OtherCM_total), OtherCM_total),4), 
+            median = round(median(OtherCM_positive/OtherCM_total),2),
+            min = round(min(OtherCM_positive/OtherCM_total),2),
+            max = round(max(OtherCM_positive/OtherCM_total),2),
+            Clinical_Utility = sum(CU_exdiagnostic, na.rm = T),
+            Cases_VUS = round(weighted.mean((Variant_VUS/Overall_total), Overall_total, na.rm = T),2)) %>% 
+  kable()
+```
+
+SUD diagnostic yield
+
+```{r}
+#| echo: false
+
+#SUD diagnostic yield
+ggplot(data = slr_data %>% drop_na(SUD_positive) %>% filter(User == "jwb"), 
+       aes(x = Year, y = as.numeric(SUD_positive/SUD_total), size = SUD_total)) + ylim(0,1) + 
+       geom_jitter(colour = wildflower_palette[1]) + 
+       ylab("Diagnostic Yield") + labs(title ="SUD Diagnostic Yield")
+
+ggplot(data = slr_data %>% drop_na(SUD_positive, Family_history_count) %>% filter(User == "jwb"), 
+       aes(x = as.numeric(Family_history_count/Proband_count), y = as.numeric(SUD_positive/SUD_total), 
+       size = SUD_total)) + ylim(0,1) + geom_jitter(colour = wildflower_palette[1]) + 
+       xlab("Proportion Family History Positive") + ylab("Diagnostic Yield") + labs(title ="SUD DY by Family History")
+
+slr_data %>% group_by(User) %>% drop_na(SUD_total) %>% 
+  summarise(SUD_Studies = length(SUD_positive),
+            Proband_SUD = sum(SUD_total), 
+            mean_DY = round(mean((SUD_positive/SUD_total)),2),
+            #wtmean_DY = round(weighted.mean((SUD_positive/SUD_total), SUD_total),4), 
+            median = round(median(SUD_positive/SUD_total),2),
+            min = round(min(SUD_positive/SUD_total),2),
+            max = round(max(SUD_positive/SUD_total),2),
+            Clinical_Utility = sum(CU_exdiagnostic, na.rm = T),
+            Cases_VUS = round(weighted.mean((Variant_VUS/Overall_total), Overall_total, na.rm = T),2)) %>% 
+  kable()
+```
+
+## Diagnostic Yields by Type of Cardiomyopathy Filtered to Remove Single Gene and CNV-Only Studies
+
+These analyses exclude studies with single genes and CNV-only testing. This removes the bias of expected very low diagnostic yields. Should be more like routine panel testing.
+
+HCM diagnostic yield
+
+```{r}
+#| echo: false
+
+##Diagnostic Yields by Type of Cardiomyopathy
+
+#HCM diagnostic yield
+ggplot(data = slr_data %>% drop_na(HCM_positive) %>% 
+         filter(User == "jwb", Test_max_genes_count > 1, Variant_type_SNV == 1), 
+         aes(x = Year, y = as.numeric(HCM_positive/HCM_total), size = HCM_total)) + ylim(0,1) + 
+         geom_jitter(colour = wildflower_palette[31]) + 
+         ylab("Diagnostic Yield") + labs(title ="HCM Diagnostic Yield")
+
+ggplot(data = slr_data %>% drop_na(HCM_positive, Family_history_count) %>%
+         filter(User == "jwb", Test_max_genes_count > 1, Variant_type_SNV == 1), 
+         aes(x = as.numeric(Family_history_count/Proband_count), y = as.numeric(HCM_positive/HCM_total), 
+         size = HCM_total)) + ylim(0,1) + 
+         geom_jitter(colour = wildflower_palette[31]) + 
+         xlab("Proportion Family History Positive") + ylab("Diagnostic Yield") + 
+         labs(title ="HCM DY by Family History")
+
+slr_data %>% group_by(User) %>% drop_na(HCM_total) %>% 
+         filter(Test_max_genes_count > 1, Variant_type_SNV == 1) %>%  
+  summarise(HCM_Studies = length(HCM_positive),
+            Proband_HCM = sum(HCM_total), 
+            mean_DY = round(mean((HCM_positive/HCM_total)),4),
+            wtmean_DY = round(weighted.mean((HCM_positive/HCM_total), HCM_total),4), 
+            median = round(median(HCM_positive/HCM_total),4),
+            min = round(min(HCM_positive/HCM_total),4),
+            max = round(max(HCM_positive/HCM_total),4),
+            Clinical_Utility = sum(CU_exdiagnostic, na.rm = T),
+            Cases_VUS = round(weighted.mean((Variant_VUS/Overall_total), Overall_total, na.rm = T),4)) %>% 
+  kable()
+
+
+
+```
+
+DCM diagnostic yield
+
+```{r}
+#| echo: false
+
+#DCM diagnostic yield
+ggplot(data = slr_data %>% drop_na(DCM_positive) %>% 
+         filter(User == "jwb", Test_max_genes_count > 1, Variant_type_SNV == 1), 
+         aes(x = Year, y = as.numeric(DCM_positive/DCM_total), size = DCM_total)) + ylim(0,1) + 
+         geom_jitter(colour = wildflower_palette[26]) + 
+         ylab("Diagnostic Yield") + labs(title ="DCM Diagnostic Yield")
+
+ggplot(data = slr_data %>% drop_na(DCM_positive, Family_history_count) %>% 
+         filter(User == "jwb", Test_max_genes_count > 1, Variant_type_SNV == 1), 
+         aes(x = as.numeric(Family_history_count/Proband_count), y = as.numeric(DCM_positive/DCM_total),  
+         size = DCM_total)) + ylim(0,1) + geom_jitter(colour = wildflower_palette[26]) + 
+         xlab("Proportion Family History Positive") + ylab("Diagnostic Yield") + 
+         labs(title ="DCM DY by Family History")
+
+slr_data %>% group_by(User) %>% drop_na(DCM_total) %>%
+         filter(Test_max_genes_count > 1, Variant_type_SNV == 1) %>% 
+  summarise(DCM_Studies = length(DCM_positive),
+            Proband_DCM = sum(DCM_total), 
+            mean_DY = round(mean((DCM_positive/DCM_total)),4),
+            wtmean_DY = round(weighted.mean((DCM_positive/DCM_total), DCM_total),4), 
+            median = round(median(DCM_positive/DCM_total),4),
+            min = round(min(DCM_positive/DCM_total),4),
+            max = round(max(DCM_positive/DCM_total),4),
+            Clinical_Utility = sum(CU_exdiagnostic, na.rm = T),
+            Cases_VUS = round(weighted.mean((Variant_VUS/Overall_total), Overall_total, na.rm = T),4)) %>% 
+  kable()
+```
+
+RCM diagnostic yield
+
+```{r}
+#| echo: false
+
+#RCM diagnostic yield
+ggplot(data = slr_data %>% drop_na(RCM_positive) %>% 
+         filter(User == "jwb", Test_max_genes_count > 1, Variant_type_SNV == 1), 
+         aes(x = Year, y = as.numeric(RCM_positive/RCM_total), size = RCM_total)) + ylim(0,1) + 
+         geom_jitter(colour = wildflower_palette[21]) + 
+         ylab("Diagnostic Yield") + labs(title ="RCM Diagnostic Yield")
+
+ggplot(data = slr_data %>% drop_na(RCM_positive, Family_history_count) %>% 
+         filter(User == "jwb", Test_max_genes_count > 1, Variant_type_SNV == 1), 
+         aes(x = as.numeric(Family_history_count/Proband_count), y = as.numeric(RCM_positive/RCM_total), 
+         size = RCM_total)) + ylim(0,1) + 
+         geom_jitter(colour = wildflower_palette[21]) + 
+         xlab("Proportion Family History Positive") + ylab("Diagnostic Yield") + 
+         labs(title ="RCM DY by Family History")
+
+slr_data %>% group_by(User) %>% drop_na(RCM_total) %>% 
+         filter(Test_max_genes_count > 1, Variant_type_SNV == 1) %>% 
+  summarise(RCM_Studies = length(RCM_positive),
+            Proband_RCM = sum(RCM_total), 
+            mean_DY = round(weighted.mean((RCM_positive/RCM_total)),4),
+            wtmean_DY = round(weighted.mean((RCM_positive/RCM_total), RCM_total),4), 
+            median = round(median(RCM_positive/RCM_total),4),
+            min = round(min(RCM_positive/RCM_total),4),
+            max = round(max(RCM_positive/RCM_total),4),
+            Clinical_Utility = sum(CU_exdiagnostic, na.rm = T),
+            Cases_VUS = round(weighted.mean((Variant_VUS/Overall_total), Overall_total, na.rm = T),4)) %>% 
+  kable()
+```
+
+ACM diagnostic yield
+
+```{r}
+#| echo: false
+
+#ACM diagnostic yield
+ggplot(data = slr_data %>% drop_na(ACM_positive) %>% 
+         filter(User == "jwb", Test_max_genes_count > 1, Variant_type_SNV == 1), 
+         aes(x = Year, y = as.numeric(ACM_positive/ACM_total), size = ACM_total)) + ylim(0,1) +
+         geom_jitter(colour = wildflower_palette[15]) + 
+         ylab("Diagnostic Yield") + labs(title ="ACM Diagnostic Yield")
+
+ggplot(data = slr_data %>% drop_na(ACM_positive, Family_history_count) %>% 
+         filter(User == "jwb", Test_max_genes_count > 1, Variant_type_SNV == 1), 
+         aes(x = as.numeric(Family_history_count/Proband_count), y = as.numeric(ACM_positive/ACM_total), 
+         size = ACM_total)) + ylim(0,1) + geom_jitter(colour = wildflower_palette[15]) + 
+         xlab("Proportion Family History Positive") + ylab("Diagnostic Yield") + 
+         labs(title ="ACM DY by Family History")
+
+slr_data %>% group_by(User) %>% drop_na(ACM_total) %>% 
+         filter(Test_max_genes_count > 1, Variant_type_SNV == 1) %>% 
+  summarise(ACM_Studies = length(ACM_positive),
+            Proband_ACM = sum(ACM_total), 
+            mean_DY = round(mean((ACM_positive/ACM_total)),4),
+            wtmean_DY = round(weighted.mean((ACM_positive/ACM_total), ACM_total),4), 
+            median = round(median(ACM_positive/ACM_total),4),
+            min = round(min(ACM_positive/ACM_total),4),
+            max = round(max(ACM_positive/ACM_total),4),
+            Clinical_Utility = sum(CU_exdiagnostic, na.rm = T),
+            Cases_VUS = round(weighted.mean((Variant_VUS/Overall_total), Overall_total, na.rm = T),4)) %>% 
+  kable()
+```
+
+LVNC diagnostic yield
+
+```{r}
+#| echo: false
+
+#LVNC diagnostic yield
+ggplot(data = slr_data %>% drop_na(LVNC_positive) %>% 
+         filter(User == "jwb", Test_max_genes_count > 1, Variant_type_SNV == 1), 
+         aes(x = Year, y = as.numeric(LVNC_positive/LVNC_total), size = LVNC_total)) + 
+         ylim(0,1) + geom_jitter(colour = wildflower_palette[11]) + 
+         ylab("Diagnostic Yield") + labs(title ="LVNC Diagnostic Yield")
+
+ggplot(data = slr_data %>% drop_na(LVNC_positive, Family_history_count) %>% 
+         filter(User == "jwb", Test_max_genes_count > 1, Variant_type_SNV == 1), 
+         aes(x = as.numeric(Family_history_count/Proband_count), y = as.numeric(LVNC_positive/LVNC_total), 
+         size = LVNC_total)) + ylim(0,1) + geom_jitter(colour = wildflower_palette[11]) + 
+         xlab("Proportion Family History Positive") + ylab("Diagnostic Yield") + 
+         labs(title ="LVNC DY by Family History")
+
+slr_data %>% group_by(User) %>% drop_na(LVNC_total) %>% 
+         filter(Test_max_genes_count > 1, Variant_type_SNV == 1) %>% 
+  summarise(LVNC_Studies = length(LVNC_positive),
+            Proband_LVNC = sum(LVNC_total), 
+            mean_DY = round(mean((LVNC_positive/LVNC_total)),4),
+            wtmean_DY = round(weighted.mean((LVNC_positive/LVNC_total), LVNC_total),4), 
+            median = round(median(LVNC_positive/LVNC_total),4),
+            min = round(min(LVNC_positive/LVNC_total),4),
+            max = round(max(LVNC_positive/LVNC_total),4),
+            Clinical_Utility = sum(CU_exdiagnostic, na.rm = T),
+            Cases_VUS = round(weighted.mean((Variant_VUS/Overall_total), Overall_total, na.rm = T),4)) %>% 
+  kable()
+```
+
+Unclassified CM diagnostic yield
+
+```{r}
+#| echo: false
+
+#Other CM diagnostic yield
+ggplot(data = slr_data %>% drop_na(OtherCM_positive) %>% 
+         filter(User == "jwb", Test_max_genes_count > 1, Variant_type_SNV == 1), 
+         aes(x = Year, y = as.numeric(OtherCM_positive/OtherCM_total), size = OtherCM_total)) + ylim(0,1) + 
+         geom_jitter(colour = wildflower_palette[6]) + 
+         ylab("Diagnostic Yield") + labs(title ="Unclassified Cardiomyopathy Diagnostic Yield")
+
+ggplot(data = slr_data %>% drop_na(OtherCM_positive, Family_history_count) %>% 
+         filter(User == "jwb", Test_max_genes_count > 1, Variant_type_SNV == 1), 
+         aes(x = as.numeric(Family_history_count/Proband_count), y = as.numeric(OtherCM_positive/OtherCM_total), 
+         size = OtherCM_total)) + ylim(0,1) + 
+         geom_jitter(colour = wildflower_palette[6]) + 
+         xlab("Proportion Family History Positive") + ylab("Diagnostic Yield") + 
+         labs(title ="Unclassified DY by Family History")
+
+slr_data %>% group_by(User) %>% drop_na(OtherCM_total) %>% 
+         filter(Test_max_genes_count > 1, Variant_type_SNV == 1) %>% 
+  summarise(OtherCM_Studies = length(OtherCM_positive),
+            Proband_OtherCM = sum(OtherCM_total), 
+            mean_DY = round(mean((OtherCM_positive/OtherCM_total)),4),
+            wtmean_DY = round(weighted.mean((OtherCM_positive/OtherCM_total), OtherCM_total),4), 
+            median = round(median(OtherCM_positive/OtherCM_total),4),
+            min = round(min(OtherCM_positive/OtherCM_total),4),
+            max = round(max(OtherCM_positive/OtherCM_total),4),
+            Clinical_Utility = sum(CU_exdiagnostic, na.rm = T),
+            Cases_VUS = round(weighted.mean((Variant_VUS/Overall_total), Overall_total, na.rm = T),4)) %>% 
+  kable()
+```
+
+SUD diagnostic yield
+
+```{r}
+#| echo: false
+
+#SUD diagnostic yield
+ggplot(data = slr_data %>% drop_na(SUD_positive) %>% 
+         filter(User == "jwb", Test_max_genes_count > 1, Variant_type_SNV == 1), 
+         aes(x = Year, y = as.numeric(SUD_positive/SUD_total), size = SUD_total)) + ylim(0,1) + 
+         geom_jitter(colour = wildflower_palette[1]) + 
+         ylab("Diagnostic Yield") + labs(title ="SUD Diagnostic Yield")
+
+ggplot(data = slr_data %>% drop_na(SUD_positive, Family_history_count) %>% 
+         filter(User == "jwb", Test_max_genes_count > 1, Variant_type_SNV == 1), 
+         aes(x = as.numeric(Family_history_count/Proband_count), y = as.numeric(SUD_positive/SUD_total), 
+         size = SUD_total)) + ylim(0,1) + 
+         geom_jitter(colour = wildflower_palette[1]) + 
+         xlab("Proportion Family History Positive") + ylab("Diagnostic Yield") + 
+         labs(title ="SUD DY by Family History")
+
+slr_data %>% group_by(User) %>% drop_na(SUD_total) %>% 
+         filter(Test_max_genes_count > 1, Variant_type_SNV == 1) %>% 
+  summarise(SUD_Studies = length(SUD_positive),
+            Proband_SUD = sum(SUD_total), 
+            mean_DY = round(mean((SUD_positive/SUD_total)),4),
+            wtmean_DY = round(weighted.mean((SUD_positive/SUD_total), SUD_total),4), 
+            median = round(median(SUD_positive/SUD_total),4),
+            min = round(min(SUD_positive/SUD_total),4),
+            max = round(max(SUD_positive/SUD_total),4),
+            Clinical_Utility = sum(CU_exdiagnostic, na.rm = T),
+            Cases_VUS = round(weighted.mean((Variant_VUS/Overall_total), Overall_total, na.rm = T),4)) %>% 
+  kable()
+```
+
+## Diagnostic Yields by Type of Cardiomyopathy Filtered to Remove Single Gene, CNV-Only Studies, and Multisite Lab
+
+These analyses exclude studies with single genes and CNV-only testing. This removes the bias of expected very low diagnostic yields. Should be more like routine panel testing. Multisite lab may reduce chance that clinical utility was reported.
+
+HCM diagnostic yield
+
+```{r}
+#| echo: false
+
+
+##Diagnostic Yields by Type of Cardiomyopathy
+
+#HCM diagnostic yield
+ggplot(data = slr_data %>% drop_na(HCM_positive) %>% 
+         filter(User == "jwb", Test_max_genes_count > 1, Variant_type_SNV == 1, Genetic_test_site == 1), 
+         aes(x = Year, y = as.numeric(HCM_positive/HCM_total), size = HCM_total)) + ylim(0,1) + 
+         geom_jitter(colour = wildflower_palette[31]) + 
+         ylab("Diagnostic Yield") + labs(title ="HCM Diagnostic Yield")
+
+ggplot(data = slr_data %>% drop_na(HCM_positive, Family_history_count) %>%
+         filter(User == "jwb", Test_max_genes_count > 1, Variant_type_SNV == 1, Genetic_test_site == 1), 
+         aes(x = as.numeric(Family_history_count/Proband_count), y = as.numeric(HCM_positive/HCM_total), 
+         size = HCM_total)) + ylim(0,1) + 
+         geom_jitter(colour = wildflower_palette[31]) + 
+         xlab("Proportion Family History Positive") + ylab("Diagnostic Yield") + 
+         labs(title ="HCM DY by Family History")
+
+slr_data %>% group_by(User) %>% drop_na(HCM_total) %>% 
+         filter(Test_max_genes_count > 1, Variant_type_SNV == 1, Genetic_test_site == 1) %>%  
+  summarise(HCM_Studies = length(HCM_positive),
+            Proband_HCM = sum(HCM_total), 
+            mean_DY = round(mean((HCM_positive/HCM_total)),4),
+            wtmean_DY = round(weighted.mean((HCM_positive/HCM_total), HCM_total),4), 
+            median = round(median(HCM_positive/HCM_total),4),
+            min = round(min(HCM_positive/HCM_total),4),
+            max = round(max(HCM_positive/HCM_total),4),
+            Clinical_Utility = sum(CU_exdiagnostic, na.rm = T),
+            Cases_VUS = round(weighted.mean((Variant_VUS/Overall_total), Overall_total, na.rm = T),4)) %>% 
+  kable()
+
+
+```
+
+DCM diagnostic yield
+
+```{r}
+#| echo: false
+
+#DCM diagnostic yield
+ggplot(data = slr_data %>% drop_na(DCM_positive) %>% 
+         filter(User == "jwb", Test_max_genes_count > 1, Variant_type_SNV == 1), 
+         aes(x = Year, y = as.numeric(DCM_positive/DCM_total), size = DCM_total)) + ylim(0,1) + 
+         geom_jitter(colour = wildflower_palette[26]) + 
+         ylab("Diagnostic Yield") + labs(title ="DCM Diagnostic Yield")
+
+ggplot(data = slr_data %>% drop_na(DCM_positive, Family_history_count) %>% 
+         filter(User == "jwb", Test_max_genes_count > 1, Variant_type_SNV == 1), 
+         aes(x = as.numeric(Family_history_count/Proband_count), y = as.numeric(DCM_positive/DCM_total),  
+         size = DCM_total)) + ylim(0,1) + geom_jitter(colour = wildflower_palette[26]) + 
+         xlab("Proportion Family History Positive") + ylab("Diagnostic Yield") + 
+         labs(title ="DCM DY by Family History")
+
+slr_data %>% group_by(User) %>% drop_na(DCM_total) %>%
+         filter(Test_max_genes_count > 1, Variant_type_SNV == 1) %>% 
+  summarise(DCM_Studies = length(DCM_positive),
+            Proband_DCM = sum(DCM_total), 
+            mean_DY = round(mean((DCM_positive/DCM_total)),4),
+            wtmean_DY = round(weighted.mean((DCM_positive/DCM_total), DCM_total),4), 
+            median = round(median(DCM_positive/DCM_total),4),
+            min = round(min(DCM_positive/DCM_total),4),
+            max = round(max(DCM_positive/DCM_total),4),
+            Clinical_Utility = sum(CU_exdiagnostic, na.rm = T),
+            Cases_VUS = round(weighted.mean((Variant_VUS/Overall_total), Overall_total, na.rm = T),4)) %>% 
+  kable()
+
+```
+
+RCM diagnostic yield
+
+```{r}
+#| echo: false
+
+#RCM diagnostic yield
+ggplot(data = slr_data %>% drop_na(RCM_positive) %>% 
+         filter(User == "jwb", Test_max_genes_count > 1, Variant_type_SNV == 1), 
+         aes(x = Year, y = as.numeric(RCM_positive/RCM_total), size = RCM_total)) + ylim(0,1) + 
+         geom_jitter(colour = wildflower_palette[21]) + 
+         ylab("Diagnostic Yield") + labs(title ="RCM Diagnostic Yield")
+
+ggplot(data = slr_data %>% drop_na(RCM_positive, Family_history_count) %>% 
+         filter(User == "jwb", Test_max_genes_count > 1, Variant_type_SNV == 1), 
+         aes(x = as.numeric(Family_history_count/Proband_count), y = as.numeric(RCM_positive/RCM_total), 
+         size = RCM_total)) + ylim(0,1) + 
+         geom_jitter(colour = wildflower_palette[21]) + 
+         xlab("Proportion Family History Positive") + ylab("Diagnostic Yield") + 
+         labs(title ="RCM DY by Family History")
+
+slr_data %>% group_by(User) %>% drop_na(RCM_total) %>% 
+         filter(Test_max_genes_count > 1, Variant_type_SNV == 1) %>% 
+  summarise(RCM_Studies = length(RCM_positive),
+            Proband_RCM = sum(RCM_total), 
+            mean_DY = round(weighted.mean((RCM_positive/RCM_total)),4),
+            wtmean_DY = round(weighted.mean((RCM_positive/RCM_total), RCM_total),4), 
+            median = round(median(RCM_positive/RCM_total),4),
+            min = round(min(RCM_positive/RCM_total),4),
+            max = round(max(RCM_positive/RCM_total),4),
+            Clinical_Utility = sum(CU_exdiagnostic, na.rm = T),
+            Cases_VUS = round(weighted.mean((Variant_VUS/Overall_total), Overall_total, na.rm = T),4)) %>% 
+  kable()
+```
+
+ACM diagnostic yield
+
+```{r}
+#| echo: false
+
+#ACM diagnostic yield
+ggplot(data = slr_data %>% drop_na(ACM_positive) %>% 
+         filter(User == "jwb", Test_max_genes_count > 1, Variant_type_SNV == 1), 
+         aes(x = Year, y = as.numeric(ACM_positive/ACM_total), size = ACM_total)) + ylim(0,1) +
+         geom_jitter(colour = wildflower_palette[15]) + 
+         ylab("Diagnostic Yield") + labs(title ="ACM Diagnostic Yield")
+
+ggplot(data = slr_data %>% drop_na(ACM_positive, Family_history_count) %>% 
+         filter(User == "jwb", Test_max_genes_count > 1, Variant_type_SNV == 1), 
+         aes(x = as.numeric(Family_history_count/Proband_count), y = as.numeric(ACM_positive/ACM_total), 
+         size = ACM_total)) + ylim(0,1) + geom_jitter(colour = wildflower_palette[15]) + 
+         xlab("Proportion Family History Positive") + ylab("Diagnostic Yield") + 
+         labs(title ="ACM DY by Family History")
+
+slr_data %>% group_by(User) %>% drop_na(ACM_total) %>% 
+         filter(Test_max_genes_count > 1, Variant_type_SNV == 1) %>% 
+  summarise(ACM_Studies = length(ACM_positive),
+            Proband_ACM = sum(ACM_total), 
+            mean_DY = round(mean((ACM_positive/ACM_total)),4),
+            wtmean_DY = round(weighted.mean((ACM_positive/ACM_total), ACM_total),4), 
+            median = round(median(ACM_positive/ACM_total),4),
+            min = round(min(ACM_positive/ACM_total),4),
+            max = round(max(ACM_positive/ACM_total),4),
+            Clinical_Utility = sum(CU_exdiagnostic, na.rm = T),
+            Cases_VUS = round(weighted.mean((Variant_VUS/Overall_total), Overall_total, na.rm = T),4)) %>% 
+  kable()
+```
+
+LVNC diagnostic yield
+
+```{r}
+#| echo: false
+
+#LVNC diagnostic yield
+ggplot(data = slr_data %>% drop_na(LVNC_positive) %>% 
+         filter(User == "jwb", Test_max_genes_count > 1, Variant_type_SNV == 1), 
+         aes(x = Year, y = as.numeric(LVNC_positive/LVNC_total), size = LVNC_total)) + 
+         ylim(0,1) + geom_jitter(colour = wildflower_palette[11]) + 
+         ylab("Diagnostic Yield") + labs(title ="LVNC Diagnostic Yield")
+
+ggplot(data = slr_data %>% drop_na(LVNC_positive, Family_history_count) %>% 
+         filter(User == "jwb", Test_max_genes_count > 1, Variant_type_SNV == 1), 
+         aes(x = as.numeric(Family_history_count/Proband_count), y = as.numeric(LVNC_positive/LVNC_total), 
+         size = LVNC_total)) + ylim(0,1) + geom_jitter(colour = wildflower_palette[11]) + 
+         xlab("Proportion Family History Positive") + ylab("Diagnostic Yield") + 
+         labs(title ="LVNC DY by Family History")
+
+slr_data %>% group_by(User) %>% drop_na(LVNC_total) %>% 
+         filter(Test_max_genes_count > 1, Variant_type_SNV == 1) %>% 
+  summarise(LVNC_Studies = length(LVNC_positive),
+            Proband_LVNC = sum(LVNC_total), 
+            mean_DY = round(mean((LVNC_positive/LVNC_total)),4),
+            wtmean_DY = round(weighted.mean((LVNC_positive/LVNC_total), LVNC_total),4), 
+            median = round(median(LVNC_positive/LVNC_total),4),
+            min = round(min(LVNC_positive/LVNC_total),4),
+            max = round(max(LVNC_positive/LVNC_total),4),
+            Clinical_Utility = sum(CU_exdiagnostic, na.rm = T),
+            Cases_VUS = round(weighted.mean((Variant_VUS/Overall_total), Overall_total, na.rm = T),4)) %>% 
+  kable()
+```
+
+Unclassified Cardiomyopathy diagnostic yield
+
+```{r}
+#| echo: false
+
+#Other CM diagnostic yield
+ggplot(data = slr_data %>% drop_na(OtherCM_positive) %>% 
+         filter(User == "jwb", Test_max_genes_count > 1, Variant_type_SNV == 1), 
+         aes(x = Year, y = as.numeric(OtherCM_positive/OtherCM_total), size = OtherCM_total)) + ylim(0,1) + 
+         geom_jitter(colour = wildflower_palette[6]) + 
+         ylab("Diagnostic Yield") + labs(title ="Unclassified Cardiomyopathy Diagnostic Yield")
+
+ggplot(data = slr_data %>% drop_na(OtherCM_positive, Family_history_count) %>% 
+         filter(User == "jwb", Test_max_genes_count > 1, Variant_type_SNV == 1), 
+         aes(x = as.numeric(Family_history_count/Proband_count), y = as.numeric(OtherCM_positive/OtherCM_total), 
+         size = OtherCM_total)) + ylim(0,1) + 
+         geom_jitter(colour = wildflower_palette[6]) + 
+         xlab("Proportion Family History Positive") + ylab("Diagnostic Yield") + 
+         labs(title ="Unclassified DY by Family History")
+
+slr_data %>% group_by(User) %>% drop_na(OtherCM_total) %>% 
+         filter(Test_max_genes_count > 1, Variant_type_SNV == 1) %>% 
+  summarise(OtherCM_Studies = length(OtherCM_positive),
+            Proband_OtherCM = sum(OtherCM_total), 
+            mean_DY = round(mean((OtherCM_positive/OtherCM_total)),4),
+            wtmean_DY = round(weighted.mean((OtherCM_positive/OtherCM_total), OtherCM_total),4), 
+            median = round(median(OtherCM_positive/OtherCM_total),4),
+            min = round(min(OtherCM_positive/OtherCM_total),4),
+            max = round(max(OtherCM_positive/OtherCM_total),4),
+            Clinical_Utility = sum(CU_exdiagnostic, na.rm = T),
+            Cases_VUS = round(weighted.mean((Variant_VUS/Overall_total), Overall_total, na.rm = T),4)) %>% 
+  kable()
+```
+
+SUD diagnostic yield
+
+```{r}
+#| echo: false
+
+#SUD diagnostic yield
+ggplot(data = slr_data %>% drop_na(SUD_positive) %>% 
+         filter(User == "jwb", Test_max_genes_count > 1, Variant_type_SNV == 1), 
+         aes(x = Year, y = as.numeric(SUD_positive/SUD_total), size = SUD_total)) + ylim(0,1) + 
+         geom_jitter(colour = wildflower_palette[1]) + 
+         ylab("Diagnostic Yield") + labs(title ="SUD Diagnostic Yield")
+
+ggplot(data = slr_data %>% drop_na(SUD_positive, Family_history_count) %>% 
+         filter(User == "jwb", Test_max_genes_count > 1, Variant_type_SNV == 1), 
+         aes(x = as.numeric(Family_history_count/Proband_count), y = as.numeric(SUD_positive/SUD_total), 
+         size = SUD_total)) + ylim(0,1) + 
+         geom_jitter(colour = wildflower_palette[1]) + 
+         xlab("Proportion Family History Positive") + ylab("Diagnostic Yield") + 
+         labs(title ="SUD DY by Family History")
+
+slr_data %>% group_by(User) %>% drop_na(SUD_total) %>% 
+         filter(Test_max_genes_count > 1, Variant_type_SNV == 1) %>% 
+  summarise(SUD_Studies = length(SUD_positive),
+            Proband_SUD = sum(SUD_total), 
+            mean_DY = round(mean((SUD_positive/SUD_total)),4),
+            wtmean_DY = round(weighted.mean((SUD_positive/SUD_total), SUD_total),4), 
+            median = round(median(SUD_positive/SUD_total),4),
+            min = round(min(SUD_positive/SUD_total),4),
+            max = round(max(SUD_positive/SUD_total),4),
+            Clinical_Utility = sum(CU_exdiagnostic, na.rm = T),
+            Cases_VUS = round(weighted.mean((Variant_VUS/Overall_total), Overall_total, na.rm = T),4)) %>% 
+  kable()
+```
+
+## Meta-Analysis and Meta-Regressions
+
+### All publications
+
+Meta-Analysis of Proportion with Positive Molecular Diagnosis
+
+```{r}
+#| echo: false
+
+#Meta-Analysis of Proportion with Positive Molecular Diagnosis
+m.prop_all <- metaprop(event = Overall_positive,
+                   n = Overall_total,
+                   studlab = ID,
+                   data = slr_data %>% drop_na(Overall_positive) %>% filter(User == "jwb"),
+                   method = "GLMM",
+                   sm = "PLOGIT",
+                   fixed = FALSE,
+                   random = TRUE,
+                   hakn = TRUE,
+                   title = "Overall Diagnostic Yield")
+summary(m.prop_all)
+
+
+m.gen.reg <- metareg(m.prop_all, ~Year)
+```
+
+Meta-analysis of overall DY excluding single gene, CNV-only, rasopathy or amyloidosis testing
+
+```{r}
+#| echo: false
+
+#Meta-analysis of overall DY excluding single gene, CNV-only, rasopathy or amyloidosis testing
+m.prop_panel <- metaprop(event = Overall_positive,
+                   n = Overall_total,
+                   studlab = ID,
+                   data = slr_data %>%  
+                     filter(User == "jwb", Meta_Inclusion == 1),
+                   method = "GLMM",
+                   sm = "PLOGIT",
+                   fixed = FALSE,
+                   random = TRUE,
+                   hakn = TRUE,
+                   prediction = TRUE,
+                   title = "Overall Diagnostic Yield Excluding Single Gene and CNV-Only Studies")
+summary(m.prop_panel)
+
+m.gen.reg <- metareg(m.prop_panel, ~Test_max_genes_count)
+summary(m.gen.reg)
+bubble(m.gen.reg, studlab = T)
+
+#forest.meta(m.prop_panel, sortvar = TE, layout = "RevMan5", plotwidth = "60mm")
+
+png(file = "forestplot_overall_ex.png", width = 2400, height = 3500, res = 200)
+forest.meta(m.prop_panel, sortvar = TE, layout = "RevMan5")
+dev.off()
+
+
+knitr::include_graphics('./forestplot_overall_ex.png')
+```
+
+### HCM
+
+Meta-analysis of DY excluding single gene, CNV-only, rasopathy or amyloidosis testing
+
+```{r}
+#| echo: false
+
+
+#Meta-analysis of HCM DY excluding single gene, CNV-only, rasopathy or amyloidosis testing
+m.prop_HCM <- metaprop(event = HCM_positive,
+                   n = HCM_total,
+                   studlab = ID,
+                   data = slr_data %>%  drop_na(HCM_total) %>% 
+                     filter(User == "jwb", Meta_Inclusion == 1),
+                   method = "GLMM",
+                   sm = "PLOGIT",
+                   fixed = FALSE,
+                   random = TRUE,
+                   hakn = TRUE,
+                   prediction = TRUE,
+                   title = "HCM Diagnostic Yield Excluding Single Gene, CNV-Only Studies, Rasopathy, and Amyloidosis Panels")
+summary(m.prop_HCM)
+
+png(file = "forestplot_hcm_ex.png", width = 2400, height = 2200, res = 200)
+forest.meta(m.prop_HCM, sortvar = TE, layout = "RevMan5")
+dev.off()
+
+knitr::include_graphics('./forestplot_hcm_ex.png')
+
+#Examine whether Family History Proportion explains Diagnostic Yield Heterogeneity
+FH_proportion_HCM <- slr_data %>%  drop_na(HCM_total) %>% 
+                     filter(User == "jwb", Meta_Inclusion == 1,)                          %>% select(FH_proportion)
+FH_proportion_HCM <- as.vector(unlist(FH_proportion_HCM))
+
+m.gen.reg <- metareg(m.prop_HCM, ~FH_proportion_HCM)
+summary(m.gen.reg)
+bubble(m.gen.reg, studlab = T)
+
+
+
+#examine the studies with HCM only
+m.prop_HCM_only <- metaprop(event = HCM_positive,
+                   n = HCM_total,
+                   studlab = ID,
+                   data = slr_data %>%  drop_na(HCM_total) %>% 
+                     filter(User == "jwb", Meta_Inclusion == 1, Disease_DCM == 0),
+                   method = "GLMM",
+                   sm = "PLOGIT",
+                   fixed = FALSE,
+                   random = TRUE,
+                   hakn = TRUE,
+                   prediction = TRUE,
+                   title = "HCM Diagnostic Yield in HCM Only Studies")
+summary(m.prop_HCM_only)
+
+FH_proportion_HCM_only <- slr_data %>%  drop_na(HCM_total) %>% 
+                     filter(User == "jwb", Meta_Inclusion == 1, Disease_DCM == 0)                          %>% select(FH_proportion)
+FH_proportion_HCM_only <- as.vector(unlist(FH_proportion_HCM_only))
+
+m.gen.reg <- metareg(m.prop_HCM_only, ~FH_proportion_HCM_only)
+summary(m.gen.reg)
+bubble(m.gen.reg, studlab = T)
+
+png(file = "forestplot_hcm_only.png", width = 2400, height = 2200, res = 200)
+forest.meta(m.prop_HCM_only, sortvar = TE, layout = "RevMan5")
+dev.off()
+
+knitr::include_graphics('./forestplot_hcm_only.png')
+```
+
+### DCM
+
+Meta-analysis of DY excluding single gene, CNV-only, rasopathy or amyloidosis testing
+
+```{r}
+#| echo: false
+
+
+#Meta-analysis of DCM DY excluding single gene, CNV-only, rasopathy or amyloidosis testing
+m.prop_DCM <- metaprop(event = DCM_positive,
+                   n = DCM_total,
+                   studlab = ID,
+                   data = slr_data %>%  drop_na(DCM_total) %>% 
+                     filter(User == "jwb", Meta_Inclusion == 1),
+                   method = "GLMM",
+                   sm = "PLOGIT",
+                   fixed = FALSE,
+                   random = TRUE,
+                   hakn = TRUE,
+                   prediction = TRUE,
+                   title = "DCM Diagnostic Yield Excluding Single Gene, CNV-Only, Rasopathy, and Amyloidosis Studies")
+summary(m.prop_DCM)
+
+png(file = "forestplot_dcm_ex.png", width = 2400, height = 2200, res = 200)
+forest.meta(m.prop_DCM, sortvar = TE, layout = "RevMan5")
+dev.off()
+
+knitr::include_graphics('./forestplot_dcm_ex.png')
+
+FH_proportion_DCM <- slr_data %>%  drop_na(DCM_total) %>% 
+                     filter(User == "jwb", Meta_Inclusion == 1,)                          %>% select(FH_proportion)
+FH_proportion_DCM <- as.vector(unlist(FH_proportion_DCM))
+
+m.gen.reg <- metareg(m.prop_DCM, ~FH_proportion_DCM)
+summary(m.gen.reg)
+bubble(m.gen.reg, studlab = T)
+
+
+#DCM only analysis
+m.prop_DCM_only <- metaprop(event = DCM_positive,
+                   n = DCM_total,
+                   studlab = ID,
+                   data = slr_data %>%  drop_na(Disease_DCM) %>% 
+                     filter(User == "jwb", Meta_Inclusion == 1, Disease_HCM == 0, Disease_ACM == 0, Disease_LVNC == 0),
+                   method = "GLMM",
+                   sm = "PLOGIT",
+                   fixed = FALSE,
+                   random = TRUE,
+                   hakn = TRUE,
+                   prediction = TRUE,
+                   title = "DCM Only Diagnostic Yield")
+summary(m.prop_DCM_only)
+
+FH_proportion_DCM_only <- slr_data %>%  drop_na(DCM_total) %>% 
+                     filter(User == "jwb", Meta_Inclusion == 1, Disease_HCM == 0, Disease_ACM == 0, Disease_LVNC == 0) %>% select(FH_proportion)
+
+FH_proportion_DCM_only <- as.vector(unlist(FH_proportion_DCM_only))
+
+png(file = "forestplot_dcm_only.png", width = 2400, height = 2200, res = 200)
+forest.meta(m.prop_DCM_only, sortvar = TE, layout = "RevMan5")
+dev.off()
+
+knitr::include_graphics('./forestplot_dcm_only.png')
+
+m.gen.reg <- metareg(m.prop_DCM_only, ~FH_proportion_DCM_only)
+summary(m.gen.reg)
+bubble(m.gen.reg, studlab = T)
+
+```
+
+### RCM
+
+Meta-analysis of DY excluding single gene, CNV-only, rasopathy or amyloidosis testing
+
+```{r}
+#| echo: false
+
+
+#Meta-analysis of RCM DY excluding single gene, CNV-only, rasopathy or amyloidosis testing
+m.prop_RCM <- metaprop(event = RCM_positive,
+                   n = RCM_total,
+                   studlab = ID,
+                   data = slr_data %>%  drop_na(RCM_total) %>% 
+                     filter(User == "jwb", Meta_Inclusion == 1),
+                   method = "GLMM",
+                   sm = "PLOGIT",
+                   fixed = FALSE,
+                   random = TRUE,
+                   hakn = TRUE,
+                   prediction = TRUE,
+                   title = "RCM Diagnostic Yield Excluding Single Gene, CNV-Only, Rasopathy, and Amyloidosis Studies")
+summary(m.prop_RCM)
+
+png(file = "forestplot_rcm_ex.png", width = 2400, height = 1200, res = 200)
+forest.meta(m.prop_RCM, sortvar = TE, layout = "RevMan5")
+dev.off()
+
+knitr::include_graphics('./forestplot_rcm_ex.png')
+
+```
+
+### ACM
+
+Meta-analysis of DY excluding single gene, CNV-only, rasopathy or amyloidosis testing
+
+```{r}
+#| echo: false
+
+
+#Meta-analysis of ACM DY excluding single gene, CNV-only, rasopathy or amyloidosis testing
+m.prop_ACM <- metaprop(event = ACM_positive,
+                   n = ACM_total,
+                   studlab = ID,
+                   data = slr_data %>%  drop_na(ACM_total) %>% 
+                     filter(User == "jwb", Meta_Inclusion == 1),
+                   method = "GLMM",
+                   sm = "PLOGIT",
+                   fixed = FALSE,
+                   random = TRUE,
+                   hakn = TRUE,
+                   prediction = TRUE,
+                   title = "ACM Diagnostic Yield Excluding Single Gene, CNV-Only, Rasopathy, and Amyloidosis Studies")
+summary(m.prop_ACM)
+
+png(file = "forestplot_acm_ex.png", width = 2400, height = 1200, res = 200)
+forest.meta(m.prop_ACM, sortvar = TE, layout = "RevMan5")
+dev.off()
+
+knitr::include_graphics('./forestplot_acm_ex.png')
+
+```
+
+### LVNC
+
+Meta-analysis of diagnostic proportion excluding single gene, CNV-only, rasopathy or amyloidosis testing
+
+```{r}
+#| echo: false
+
+#Meta-analysis of LVNC DY excluding single gene, CNV-only, rasopathy or amyloidosis testing
+m.prop_LVNC <- metaprop(event = LVNC_positive,
+                   n = LVNC_total,
+                   studlab = ID,
+                   data = slr_data %>%  drop_na(LVNC_total) %>% 
+                     filter(User == "jwb", Meta_Inclusion == 1),
+                   method = "GLMM",
+                   sm = "PLOGIT",
+                   fixed = FALSE,
+                   random = TRUE,
+                   hakn = TRUE,
+                   prediction = TRUE,
+                   title = "LVNC Diagnostic Yield Excluding Single Gene, CNV-Only, Rasopathy, and Amyloidosis Studies")
+summary(m.prop_LVNC)
+
+png(file = "forestplot_lvnc_ex.png", width = 1500, height = 1200, res = 200)
+forest.meta(m.prop_LVNC, sortvar = TE, layout = "RevMan5")
+dev.off()
+
+knitr::include_graphics('./forestplot_lvnc_ex.png')
+
+```
+
+### Unclassified Cardiomyopathy
+
+Meta-analysis of diagnostic rate excluding single gene, CNV-only, rasopathy or amyloidosis testing
+
+```{r}
+#| echo: false
+
+#Meta-analysis of DCM DY excluding single gene, CNV-only, rasopathy or amyloidosis testing
+m.prop_OtherCM <- metaprop(event = OtherCM_positive,
+                   n = OtherCM_total,
+                   studlab = ID,
+                   data = slr_data %>%  drop_na(OtherCM_total) %>% 
+                     filter(User == "jwb", Meta_Inclusion == 1),
+                   method = "GLMM",
+                   sm = "PLOGIT",
+                   fixed = FALSE,
+                   random = TRUE,
+                   hakn = TRUE,
+                   prediction = TRUE,
+                   title = "Unclassified Cardiomyopathy Diagnostic Yield Excluding Single Gene, CNV-Only, Rasopathy, and Amyloidosis Studies")
+summary(m.prop_OtherCM)
+
+
+png(file = "forestplot_othercm_ex.png", width = 1500, height = 1000, res = 200)
+forest.meta(m.prop_OtherCM, sortvar = TE, layout = "RevMan5")
+dev.off()
+
+knitr::include_graphics('./forestplot_othercm_ex.png')
+
+```
+
+## Subgroup Meta-Analysis
+
+Is there a difference in HCM results comparing studies that included children and those that were adult patients only
+
+### HCM
+
+```{r}
+#| echo: false
+
+
+#HCM and age groups
+update.meta(m.prop_HCM, 
+            subgroup = Age_groups, 
+            tau.common = FALSE)
+
+#HCM and US location
+update.meta(m.prop_HCM, 
+            subgroup = Location, 
+            tau.common = FALSE)
+
+#HCM and age groups
+update.meta(m.prop_HCM_only, 
+            subgroup = Age_groups, 
+            tau.common = FALSE)
+
+#HCM and US location
+update.meta(m.prop_HCM_only, 
+            subgroup = Location, 
+            tau.common = FALSE)
+```
+
+### DCM
+
+```{r}
+#| echo: false
+
+
+#DCM and age groups
+update.meta(m.prop_DCM, 
+            subgroup = Age_groups, 
+            tau.common = FALSE)
+
+#DCM and US location
+update.meta(m.prop_DCM, 
+            subgroup = Location, 
+            tau.common = FALSE)
+
+#DCM and age groups
+update.meta(m.prop_DCM_only, 
+            subgroup = Age_groups, 
+            tau.common = FALSE)
+
+#DCM and US location
+update.meta(m.prop_DCM_only, 
+            subgroup = Location, 
+            tau.common = FALSE)
+
+```
+
+### RCM
+
+```{r}
+#| echo: false
+
+
+#RCM and age groups
+update.meta(m.prop_RCM, 
+            subgroup = Age_groups, 
+            tau.common = FALSE)
+
+#RCM and location
+update.meta(m.prop_RCM, 
+            subgroup = Location, 
+            tau.common = FALSE)
+
+```
+
+### ACM
+
+```{r}
+#| echo: false
+
+
+#ACM and age groups
+update.meta(m.prop_ACM, 
+            subgroup = Age_groups, 
+            tau.common = FALSE)
+
+#ACM and location
+update.meta(m.prop_ACM, 
+            subgroup = Location, 
+            tau.common = FALSE)
+```
+
+### LVNC
+
+```{r}
+#| echo: false
+
+
+#LVNC and age groups
+update.meta(m.prop_LVNC, 
+            subgroup = Age_groups, 
+            tau.common = FALSE)
+
+#LVNC and location
+update.meta(m.prop_LVNC, 
+            subgroup = Location, 
+            tau.common = FALSE)
+
+```
+
+### Unclassified
+
+```{r}
+#| echo: false
+
+
+#Unclassified CM and age groups
+update.meta(m.prop_OtherCM, 
+            subgroup = Children, 
+            tau.common = FALSE)
+```
+
+## Variants of Uncertain Significance
+
+```{r echo=FALSE}
+#| echo: false
+
+#VUS association with max gene count
+#Test_max_genes_count
+#Variant_VUS
+#Variant_VUS/Overall_total
+
+ggplot(data = slr_data %>% drop_na(Test_max_genes_count, Variant_VUS) %>% 
+         filter(User == "jwb", Test_max_genes_count > 1, Variant_type_SNV == 1, Test_max_genes_count < 1000), 
+         aes(x = as.numeric(Test_max_genes_count), y = as.numeric(Variant_VUS/Overall_total), 
+         size = Overall_total)) + ylim(0,1) + 
+         geom_jitter(colour = wildflower_palette[31]) + 
+         xlab("Max Genes Tested") + ylab("Proportion VUS Cases") + 
+         labs(title ="VUS by Genes Tested")
+
+```
+
+```{r echo=FALSE}
+#| echo: false
+
+slr_long <- slr_data %>% filter(User == "jwb") %>% select(Refid, 
+                                                          Disease_HCM,	
+                                                          Disease_DCM,	
+                                                          Disease_RCM,	
+                                                          Disease_ACM,	
+                                                          Disease_LVNC, 
+                                                          Disease_SCD,	
+                                                          Disease_other, 
+                                                          Proband_count,		
+                                                          Family_history_count,
+                                                          Test_outcome_positive_count, 
+                                                          Variant_VUS, 
+                                                          Overall_positive, 
+                                                          Overall_total,
+                                                          HCM_positive,	
+                                                          HCM_total,	
+                                                          DCM_positive,	
+                                                          DCM_total,
+                                                          RCM_positive,
+                                                          RCM_total,	
+                                                          ACM_positive,	
+                                                          ACM_total,	
+                                                          LVNC_positive,	
+                                                          LVNC_total,	
+                                                          OtherCM_positive,	
+                                                          OtherCM_total,	
+                                                          SUD_positive,	
+                                                          SUD_total) %>% 
+  pivot_longer(2:8, names_to = "names", values_to = "values")
+
+```
+
+```{r}
+
+#| echo: false
+
+#VUS 'Variant_VUS' association with candidate variables
+
+#These two are continuous:
+#Test_max_genes_count
+#FH_proportion
+
+
+
+#VUS by max_genes
+
+ggplot(data = slr_data %>% drop_na(Test_max_genes_count, Variant_VUS) %>% 
+              filter(User == "jwb", 
+                     Meta_Inclusion == 1,
+                     Test_max_genes_count < 1000), 
+         aes(x = as.numeric(Test_max_genes_count), 
+             y = as.numeric(Variant_VUS), 
+             size = Overall_total)) + 
+         ylim(0,1000) + 
+         geom_jitter(colour = wildflower_palette[31]) + 
+         xlab("Max Genes Tested") + ylab("VUS Count") + 
+         labs(title ="VUS by Genes Tested")
+
+model_panel <- glm(Variant_VUS ~ Test_max_genes_count, 
+             data = slr_data %>% drop_na(Test_max_genes_count, Variant_VUS) %>% 
+                    filter(User == "jwb", 
+                           Meta_Inclusion == 1, 
+                           Test_max_genes_count < 1000))
+model_panel
+summary(model_panel)
+
+data <- slr_data %>% drop_na(Test_max_genes_count, Variant_VUS) %>% 
+         filter(User == "jwb", 
+                Meta_Inclusion == 1, 
+                Test_max_genes_count < 1000)
+
+plot(data$Variant_VUS, data$Test_max_genes_count,
+     ylab = "VUS",
+     xlab = "Max Genes", 
+     main = "VUS and Panel Size")
+abline(127.78,-0.18)
+
+
+#VUS by FH_proportion
+
+ggplot(data = slr_data %>% drop_na(FH_proportion, Variant_VUS) %>% 
+              filter(User == "jwb", 
+                     Meta_Inclusion == 1,
+                     Test_max_genes_count < 1000), 
+         aes(x = as.numeric(FH_proportion), 
+             y = as.numeric(Variant_VUS), 
+             size = Overall_total)) + 
+         ylim(0,1000) + 
+         geom_jitter(colour = wildflower_palette[31]) + 
+         xlab("Proportion FH Positive") + ylab("VUS Count") + 
+         labs(title ="VUS by Family History")
+
+model_fh <- glm(Variant_VUS ~ FH_proportion, 
+             data = slr_data %>% drop_na(FH_proportion, Variant_VUS) %>% 
+                    filter(User == "jwb", 
+                           Meta_Inclusion == 1, 
+                           Test_max_genes_count < 1000))
+
+model_fh
+summary(model_fh)
+
+data <- slr_data %>% drop_na(FH_proportion, Variant_VUS) %>% 
+         filter(User == "jwb", 
+                Meta_Inclusion == 1, 
+                Test_max_genes_count < 1000)
+
+plot(data$FH_proportion, data$Variant_VUS, 
+     ylab = "VUS",
+     xlab = "Family History", 
+     main = "VUS and Family History")
+abline(40.04,100.29)
+
+```
+
+```{r}
+#| echo: false
+
+#VUS 'Variant_VUS' association with candidate variables
+#These are categorical
+#Year
+#Disease
+#Age_groups
+#Location
+#Variant_interpretation_ACMG
+
+#Year
+slr_data %>% drop_na(Year, Variant_VUS) %>% 
+             filter(User == "jwb", 
+                    Meta_Inclusion == 1,                   
+                    Test_max_genes_count < 1000) %>% 
+        group_by(Year) %>%
+        get_summary_stats(Variant_VUS, type = "common")
+
+ggboxplot(slr_data %>% drop_na(Year, Variant_VUS) %>% 
+             filter(User == "jwb", 
+                    Meta_Inclusion == 1,                   
+                    Test_max_genes_count < 1000), 
+          x = "Year", 
+          y = "Variant_VUS")
+
+res.kruskal_year <- slr_data %>% drop_na(Year, Variant_VUS) %>% 
+             filter(User == "jwb", 
+                    Meta_Inclusion == 1,                   
+                    Test_max_genes_count < 1000) %>% 
+              kruskal_test(Variant_VUS ~ Year)
+res.kruskal_year
+
+
+#Disease
+slr_data %>% drop_na(Disease, Variant_VUS) %>% 
+             filter(User == "jwb", 
+                    Meta_Inclusion == 1,                   
+                    Test_max_genes_count < 1000) %>% 
+        group_by(Disease) %>%
+        get_summary_stats(Variant_VUS, type = "common")
+
+ggboxplot(slr_data %>% drop_na(Disease, Variant_VUS) %>% 
+             filter(User == "jwb", 
+                    Meta_Inclusion == 1,                   
+                    Test_max_genes_count < 1000), 
+          x = "Disease", 
+          y = "Variant_VUS")
+
+res.kruskal_disease <- slr_data %>% drop_na(Year, Variant_VUS) %>% 
+             filter(User == "jwb", 
+                    Meta_Inclusion == 1,                   
+                    Test_max_genes_count < 1000) %>% 
+              kruskal_test(Variant_VUS ~ Disease)
+res.kruskal_disease
+
+#Age_groups
+slr_data %>% drop_na(Age_groups, Variant_VUS) %>% 
+             filter(User == "jwb", 
+                    Meta_Inclusion == 1,                   
+                    Test_max_genes_count < 1000) %>% 
+        group_by(Age_groups) %>%
+        get_summary_stats(Variant_VUS, type = "common")
+
+ggboxplot(slr_data %>% drop_na(Age_groups, Variant_VUS) %>% 
+             filter(User == "jwb", 
+                    Meta_Inclusion == 1,                   
+                    Test_max_genes_count < 1000), 
+          x = "Age_groups", 
+          y = "Variant_VUS")
+
+res.kruskal_age <- slr_data %>% drop_na(Year, Variant_VUS) %>% 
+             filter(User == "jwb", 
+                    Meta_Inclusion == 1,                   
+                    Test_max_genes_count < 1000) %>% 
+              kruskal_test(Variant_VUS ~ Age_groups)
+res.kruskal_age
+
+#Location
+slr_data %>% drop_na(Location, Variant_VUS) %>% 
+             filter(User == "jwb", 
+                    Meta_Inclusion == 1,                   
+                    Test_max_genes_count < 1000) %>% 
+        group_by(Location) %>%
+        get_summary_stats(Variant_VUS, type = "common")
+
+ggboxplot(slr_data %>% drop_na(Location, Variant_VUS) %>% 
+             filter(User == "jwb", 
+                    Meta_Inclusion == 1,                   
+                    Test_max_genes_count < 1000), 
+          x = "Location", 
+          y = "Variant_VUS")
+
+res.kruskal_location <- slr_data %>% drop_na(Year, Variant_VUS) %>% 
+             filter(User == "jwb", 
+                    Meta_Inclusion == 1,                   
+                    Test_max_genes_count < 1000) %>% 
+              kruskal_test(Variant_VUS ~ Location)
+res.kruskal_location
+
+#Variant_interpretation_ACMG
+slr_data %>% drop_na(Variant_interpretation_ACMG, Variant_VUS) %>% 
+             filter(User == "jwb", 
+                    Meta_Inclusion == 1,                   
+                    Test_max_genes_count < 1000) %>% 
+        group_by(Variant_interpretation_ACMG) %>%
+        get_summary_stats(Variant_VUS, type = "common")
+
+ggboxplot(slr_data %>% drop_na(Variant_interpretation_ACMG, Variant_VUS) %>% 
+             filter(User == "jwb", 
+                    Meta_Inclusion == 1,                   
+                    Test_max_genes_count < 1000), 
+          x = "Variant_interpretation_ACMG", 
+          y = "Variant_VUS")
+
+res.kruskal_acmg <- slr_data %>% drop_na(Year, Variant_VUS) %>% 
+             filter(User == "jwb", 
+                    Meta_Inclusion == 1,                   
+                    Test_max_genes_count < 1000) %>% 
+              kruskal_test(Variant_VUS ~ Variant_interpretation_ACMG)
+res.kruskal_acmg
+
+```
